@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/logo.png" alt="PathSmith logo" width="120" />
+
 # PathSmith
 
 **A fast, self-hostable image toolkit in Rust — two tools, one core.**
@@ -7,6 +9,7 @@
 Turn rasters into clean SVGs, and slice one image into many crops in a single pass.
 Runs as a web app, an HTTP API, a CLI, a Docker container, a WASM module, or a Rust library.
 
+![Version](https://img.shields.io/badge/version-0.1.0-blue)
 ![License](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)
 ![Built with Rust](https://img.shields.io/badge/built%20with-Rust-orange)
 ![Docker](https://img.shields.io/badge/docker-distroless%20~44MB-2496ED)
@@ -266,17 +269,15 @@ The original Python tool is preserved under [`legacy/`](legacy/). The Rust rewri
 
 ## Roadmap
 
+- 🔍 **Easy result comparison** — compare Vectorize outputs side by side (or with a slider / diff) so picking the best variant is quick without opening each preview separately.
+- 🪄 **Remove background (PNG → SVG)** — optional background removal in the Vectorize flow so logos and icons trace cleanly without a solid or checkerboard backdrop in the SVG.
 - ✏️ **SVG editor** — tweak and clean up traced output in the browser (paths, colors, nodes) before downloading, instead of re-running with a different preset.
 - 🎯 **Better raster → SVG** — improve the tracing pipelines: sharper edges, fewer/cleaner paths, smaller files, and closer fidelity to the source.
+- 📐 **SVG in Multicrop** — upload SVGs (not just rasters), draw crop boxes in the same UI, and export cropped regions as SVG (or raster) so vector assets can be batched without rasterizing first.
 - 🤖 **Auto-detect crop boxes** — in Multicrop, propose bounding boxes automatically (detect distinct regions / objects) so you can crop a batch without drawing every box by hand.
 
 ---
 
 ## License
 
-| License | Best for | Cost |
-|---|---|---|
-| **AGPL-3.0-or-later** | open-source / self-hosted use | free — see [LICENSE](LICENSE) |
-| **Commercial** | proprietary / closed-source apps | contact creo@avarnic.com (`COMMERCIAL-LICENSE.md`) |
-
-Copyright © 2026 [Avarnic](https://avarnic.com).
+[AGPL-3.0-or-later](LICENSE) — commercial licensing available on request via [GitHub](https://github.com/TheAnimatrix/PathSmith/issues). Copyright © 2026 [TheAnimatrix](https://github.com/TheAnimatrix).

@@ -1,6 +1,5 @@
-# Copyright (C) 2026 Avarnic
+# Copyright (C) 2026 TheAnimatrix
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Commercial licensing: COMMERCIAL-LICENSE.md — creo@avarnic.com
 
 [workspace]
 resolver = "2"
@@ -12,7 +11,7 @@ default-members = ["crates/core", "crates/cli", "crates/server"]
 version = "0.1.0"
 edition = "2021"
 license = "AGPL-3.0-or-later"
-authors = ["Avarnic <creo@avarnic.com>"]
+authors = ["TheAnimatrix"]
 repository = "https://github.com/TheAnimatrix/PathSmith"
 
 [workspace.dependencies]

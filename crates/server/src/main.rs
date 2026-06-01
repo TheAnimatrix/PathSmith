@@ -1,12 +1,12 @@
-// Copyright (C) 2026 Avarnic
+// Copyright (C) 2026 TheAnimatrix
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Commercial licensing: COMMERCIAL-LICENSE.md — creo@avarnic.com
 
 //! Self-hostable HTTP server for PathSmith (Vectorize + Multicrop).
 //!
 //! Endpoints:
 //!   GET  /healthz                          -> "ok"
 //!   GET  /presets                          -> [{name, description}, ...]
+//!   GET  /github/stars                     -> { "stars": N }  (GitHub stargazers_count proxy)
 //!   POST /convert?pipeline=hybrid          -> image/svg+xml   (single variant)
 //!   POST /convert/batch?pipelines=all      -> JSON {results, errors}  (multi variant)
 //!        ...&zip=1                          -> application/zip of all SVGs
@@ -72,6 +72,7 @@ async fn main() -> anyhow::Result<()> {
     let mut app = Router::new()
         .route("/healthz", get(|| async { "ok" }))
         .route("/presets", get(list_presets))
+        .route("/github/stars", get(github_stars))
         .route("/convert", post(convert_one))
         .route("/convert/batch", post(convert_batch))
         .route("/crop", post(crop));
@@ -213,17 +214,64 @@ async fn list_presets() -> Response {
     json_response(StatusCode::OK, &serde_json::Value::Array(list))
 }
 
+/// Proxies GitHub `stargazers_count` so the UI can read stars same-origin (no CORS / stale browser cache).
+async fn github_stars() -> Response {
+    let repo = std::env::var("PATHSMITH_GITHUB_REPO").unwrap_or_else(|_| "TheAnimatrix/PathSmith".into());
+    let url = format!("https://api.github.com/repos/{repo}");
+    let work = tokio::task::spawn_blocking(move || -> Result<u64, String> {
+        let resp = ureq::get(&url)
+            .set("User-Agent", "pathsmith-server")
+            .set("Accept", "application/vnd.github+json")
+            .call()
+            .map_err(|e| e.to_string())?;
+        if resp.status() != 200 {
+            return Err(format!("GitHub API status {}", resp.status()));
+        }
+        let body: serde_json::Value = resp.into_json().map_err(|e| e.to_string())?;
+        body.get("stargazers_count")
+            .and_then(|v| v.as_u64())
+            .ok_or_else(|| "missing stargazers_count".into())
+    })
+    .await;
+
+    match work {
+        Ok(Ok(stars)) => json_response(StatusCode::OK, &serde_json::json!({ "stars": stars })),
+        Ok(Err(e)) => json_response(StatusCode::BAD_GATEWAY, &serde_json::json!({ "error": e })),
+        Err(e) => json_response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            &serde_json::json!({ "error": e.to_string() }),
+        ),
+    }
+}
+
 async fn static_handler(uri: Uri) -> Response {
     let path = uri.path().trim_start_matches('/');
     let path = if path.is_empty() { "index.html" } else { path };
     if let Some(content) = Assets::get(path) {
         let mime = mime_guess::from_path(path).first_or_octet_stream();
-        return resp(StatusCode::OK, mime.as_ref(), content.data.into_owned());
+        let body = if path == "index.html" {
+            inject_version(&content.data)
+        } else {
+            content.data.into_owned()
+        };
+        return resp(StatusCode::OK, mime.as_ref(), body);
     }
     // SPA fallback.
     match Assets::get("index.html") {
-        Some(c) => resp(StatusCode::OK, "text/html", c.data.into_owned()),
+        Some(c) => resp(StatusCode::OK, "text/html", inject_version(&c.data)),
         None => resp(StatusCode::NOT_FOUND, "text/plain", b"not found".to_vec()),
+    }
+}
+
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+const VERSION_PLACEHOLDER: &str = "__PATHSMITH_VERSION__";
+
+fn inject_version(html: &[u8]) -> Vec<u8> {
+    let text = String::from_utf8_lossy(html);
+    if text.contains(VERSION_PLACEHOLDER) {
+        text.replace(VERSION_PLACEHOLDER, VERSION).into_bytes()
+    } else {
+        html.to_vec()
     }
 }
 

@@ -1,6 +1,5 @@
-// Copyright (C) 2026 Avarnic
+// Copyright (C) 2026 TheAnimatrix
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Commercial licensing: COMMERCIAL-LICENSE.md — creo@avarnic.com
 
 //! vtracer wrapper. Traces an in-memory RGBA image to an SVG string.
 //!

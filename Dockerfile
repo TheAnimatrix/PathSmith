@@ -1,7 +1,3 @@
-# Copyright (C) 2026 Avarnic
-# SPDX-License-Identifier: AGPL-3.0-or-later
-# Commercial licensing: COMMERCIAL-LICENSE.md — creo@avarnic.com
-
 # --- build stage -------------------------------------------------------------
 FROM rust:1-bookworm AS builder
 WORKDIR /app

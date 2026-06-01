@@ -1,71 +1,383 @@
 <!doctype html>
 <!--
- Copyright (C) 2026 Avarnic
+ Copyright (C) 2026 TheAnimatrix
  SPDX-License-Identifier: AGPL-3.0-or-later
- Commercial licensing: COMMERCIAL-LICENSE.md — creo@avarnic.com
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8" />
+<script>
+(function () {
+  var k = 'pathsmith-theme';
+  var t = localStorage.getItem(k);
+  if (t !== 'light' && t !== 'dark')
+    t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  document.documentElement.dataset.theme = t;
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark light" />
 <title>PathSmith</title>
+<link rel="icon" href="/logo.png" type="image/png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --bg: #0f1115; --panel: #171a21; --panel2: #1e222b; --line: #2a2f3a;
-    --fg: #e7e9ee; --muted: #9aa3b2; --accent: #6ea8fe; --accent2: #3b82f6;
-    --ok: #34d399; --err: #f87171; --radius: 14px;
+    --radius: 14px;
+    --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+    --font-body: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+    --header-h: 64px;
+    --banner-h: 36px;
+    --btn-on-accent: #1a1208;
+    --checker-bg: #fff;
+    --checker-a: #eee;
+    --checker-b: transparent;
+  }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e0f12;
+    --bg-elevated: #14151a;
+    --panel: #171a22;
+    --panel2: #1f232d;
+    --line: #2c313d;
+    --fg: #ece8e2;
+    --muted: #8a919d;
+    --text-body: #b8bec8;
+    --accent: #d4a574;
+    --accent-bright: #ebc896;
+    --accent-dim: #8f6340;
+    --accent-glow: rgba(212, 165, 116, 0.22);
+    --ok: #5cb88a;
+    --err: #e07070;
+    --header-bg: rgba(14, 15, 18, 0.85);
+    --donate-bg: linear-gradient(90deg, #1a1510 0%, #221c14 50%, #1a1510 100%);
+    --donate-fg: #c9bfb0;
+    --donate-border: rgba(212, 165, 116, 0.25);
+    --modal-overlay: rgba(8, 10, 14, 0.92);
+    --bg-mesh-top: rgba(212, 165, 116, 0.08);
+    --bg-mesh-bottom: rgba(30, 35, 48, 0.5);
+    --hover-bg: rgba(255, 255, 255, 0.05);
+    --ghost-hover-bg: rgba(255, 255, 255, 0.04);
+    --spinner-track: rgba(255, 255, 255, 0.25);
+    --shadow-drag: 0 12px 40px rgba(0, 0, 0, 0.35);
+    --logo-filter: invert(1) hue-rotate(180deg);
+  }
+  html[data-theme="light"] {
+    color-scheme: light;
+    --bg: #f8f7f5;
+    --bg-elevated: #ffffff;
+    --panel: #ffffff;
+    --panel2: #ebe6dd;
+    --line: #d8d2c8;
+    --fg: #1c1916;
+    --muted: #5f656e;
+    --text-body: #4a4f57;
+    --accent: #a67c42;
+    --accent-bright: #c49252;
+    --accent-dim: #8a6338;
+    --accent-glow: rgba(166, 124, 66, 0.18);
+    --ok: #2d8a5c;
+    --err: #c44a4a;
+    --header-bg: rgba(248, 247, 245, 0.88);
+    --donate-bg: linear-gradient(90deg, #ede6da 0%, #f0e9de 50%, #ede6da 100%);
+    --donate-fg: #5a5348;
+    --donate-border: rgba(166, 124, 66, 0.35);
+    --modal-overlay: rgba(245, 242, 236, 0.94);
+    --bg-mesh-top: rgba(196, 146, 82, 0.12);
+    --bg-mesh-bottom: rgba(220, 214, 204, 0.6);
+    --hover-bg: rgba(0, 0, 0, 0.05);
+    --ghost-hover-bg: rgba(0, 0, 0, 0.04);
+    --spinner-track: rgba(0, 0, 0, 0.12);
+    --shadow-drag: 0 12px 40px rgba(0, 0, 0, 0.12);
+    --logo-filter: none;
   }
   * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body {
-    margin: 0; background: var(--bg); color: var(--fg);
-    font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(ellipse 120% 70% at 50% -25%, var(--bg-mesh-top), transparent 55%),
+      radial-gradient(ellipse 80% 50% at 100% 100%, var(--bg-mesh-bottom), transparent 45%);
+    background-attachment: fixed;
+    color: var(--fg);
+    font: 15px/1.55 var(--font-body);
+    min-height: 100vh;
   }
-  header { padding: 28px 24px 8px; max-width: 1100px; margin: 0 auto; }
-  h1 { margin: 0; font-size: 22px; letter-spacing: -0.02em; }
-  h1 span { color: var(--accent); }
-  .sub { color: var(--muted); margin-top: 4px; font-size: 13.5px; }
-  main { max-width: 1100px; margin: 0 auto; padding: 16px 24px 64px; }
+  .shell { position: relative; z-index: 1; }
+
+  /* ---- donate banner ---- */
+  .donate-banner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: var(--banner-h);
+    padding: 6px 40px 6px 16px;
+    background: var(--donate-bg);
+    border-bottom: 1px solid var(--donate-border);
+    font-size: 13px;
+    color: var(--donate-fg);
+    text-align: center;
+  }
+  .donate-banner.hidden { display: none; }
+  .donate-banner p { margin: 0; }
+  .donate-banner a {
+    color: var(--accent-bright);
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(235, 200, 150, 0.35);
+  }
+  .donate-banner a:hover { color: var(--fg); border-bottom-color: var(--accent-bright); }
+  .donate-dismiss {
+    position: absolute;
+    right: 12px;
+    background: transparent;
+    border: 0;
+    color: var(--muted);
+    font-size: 18px;
+    line-height: 1;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 6px;
+  }
+  .donate-dismiss:hover { color: var(--fg); background: var(--hover-bg); }
+
+  /* ---- site header / nav ---- */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 0 24px;
+    height: var(--header-h);
+    max-width: 1140px;
+    margin: 0 auto;
+    border-bottom: 1px solid var(--line);
+    background: var(--header-bg);
+    backdrop-filter: blur(12px);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--fg);
+    flex-shrink: 0;
+  }
+  .brand-mark {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+  .brand-mark img {
+    width: 40px;
+    height: auto;
+    display: block;
+    filter: var(--logo-filter);
+  }
+  .brand-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.2rem;
+    letter-spacing: -0.02em;
+  }
+  .brand-name em {
+    font-style: italic;
+    color: var(--accent-bright);
+  }
+  .version-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--accent-bright);
+    background: var(--accent-glow);
+    border: 1px solid var(--donate-border);
+    border-radius: 999px;
+    vertical-align: middle;
+    line-height: 1.4;
+  }
+  .static-page h1 .version-badge {
+    margin-left: 10px;
+    font-size: 12px;
+    vertical-align: 0.15em;
+  }
+  .site-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+  .nav-link {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: color .15s, background .15s;
+  }
+  .nav-link:hover { color: var(--fg); background: var(--hover-bg); }
+  .nav-link.active { color: var(--accent-bright); background: var(--accent-glow); }
+  button.theme-toggle {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    cursor: pointer;
+    font-family: inherit;
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+  button.theme-toggle:hover:not(:disabled) {
+    color: var(--fg);
+    background: var(--hover-bg);
+    border-color: var(--muted);
+    filter: none;
+    transform: none;
+  }
+  .theme-toggle svg { width: 18px; height: 18px; display: block; }
+  html[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+  html[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+  html[data-theme="light"] .theme-toggle .icon-sun { display: none; }
+  html[data-theme="light"] .theme-toggle .icon-moon { display: block; }
+  .nav-link.nav-github {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .gh-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--panel2);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    line-height: 1.35;
+    font-variant-numeric: tabular-nums;
+  }
+  .nav-link.nav-github:hover .gh-stars { color: var(--fg); border-color: var(--muted); }
+  .gh-stars[hidden] { display: none; }
+  .gh-stars svg { width: 11px; height: 11px; flex-shrink: 0; }
+
+  main { max-width: 1140px; margin: 0 auto; padding: 24px 24px 72px; }
+  .page-view[hidden] { display: none !important; }
+
+  .app-hero { margin-bottom: 20px; animation: fadeUp .5s ease both; }
+  .app-hero .sub { color: var(--muted); margin-top: 6px; font-size: 14px; max-width: 52ch; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
   .drop {
-    border: 1.5px dashed var(--line); border-radius: var(--radius);
-    background: var(--panel); padding: 34px; text-align: center; cursor: pointer;
-    transition: border-color .15s, background .15s;
+    border: 1.5px dashed var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+    padding: 36px 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s, box-shadow .2s;
+    animation: fadeUp .55s ease .05s both;
   }
-  .drop.drag { border-color: var(--accent); background: var(--panel2); }
-  .drop strong { color: var(--fg); }
+  .drop:hover { border-color: var(--accent-dim); }
+  .drop.drag {
+    border-color: var(--accent);
+    background: var(--panel2);
+    box-shadow: 0 0 0 1px var(--accent-glow), var(--shadow-drag);
+  }
+  .drop strong { color: var(--fg); font-weight: 600; }
   .drop small { color: var(--muted); }
-  .thumb { max-height: 88px; border-radius: 8px; margin-bottom: 10px; }
+  .thumb { max-height: 88px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 4px 20px rgba(0,0,0,.4); }
 
   .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin: 18px 0; }
   .variants {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 8px; background: var(--panel); border: 1px solid var(--line);
-    border-radius: var(--radius); padding: 14px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px;
+    animation: fadeUp .6s ease .1s both;
   }
-  label.v { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 8px;
-    cursor: pointer; font-size: 13.5px; }
+  label.v {
+    display: flex; gap: 8px; align-items: center; padding: 6px 8px;
+    border-radius: 8px; cursor: pointer; font-size: 13.5px;
+  }
   label.v:hover { background: var(--panel2); }
-  label.v input { accent-color: var(--accent2); }
+  label.v input { accent-color: var(--accent); }
   .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   button {
-    background: var(--accent2); color: white; border: 0; border-radius: 10px;
-    padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer;
+    background: linear-gradient(180deg, var(--accent-bright), var(--accent-dim));
+    color: var(--btn-on-accent);
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: filter .15s, transform .1s;
   }
-  button.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); }
-  button:disabled { opacity: .5; cursor: default; }
+  button:hover:not(:disabled) { filter: brightness(1.08); }
+  button:active:not(:disabled) { transform: scale(0.98); }
+  button.ghost {
+    background: transparent;
+    color: var(--fg);
+    border: 1px solid var(--line);
+  }
+  button.ghost:hover:not(:disabled) { background: var(--ghost-hover-bg); border-color: var(--muted); }
+  button:disabled { opacity: .45; cursor: default; }
   .toolbar { display: flex; gap: 10px; align-items: center; }
 
   .grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 16px; margin-top: 22px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 22px;
   }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
-    overflow: hidden; display: flex; flex-direction: column; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: border-color .2s, transform .2s;
+    animation: fadeUp .45s ease both;
+  }
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); }
   .preview {
-    height: 180px; display: grid; place-items: center; padding: 12px; overflow: hidden;
+    height: 180px;
+    display: grid;
+    place-items: center;
+    padding: 12px;
+    overflow: hidden;
     background-color: #fff;
     background-image: linear-gradient(45deg,#eee 25%,transparent 25%),linear-gradient(-45deg,#eee 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eee 75%),linear-gradient(-45deg,transparent 75%,#eee 75%);
-    background-size: 18px 18px; background-position: 0 0,0 9px,9px -9px,-9px 0;
+    background-size: 18px 18px;
+    background-position: 0 0,0 9px,9px -9px,-9px 0;
   }
   .preview img { max-width: 100%; max-height: 100%; min-width: 0; min-height: 0; object-fit: contain; }
   .meta { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
@@ -81,11 +393,11 @@
 
   /* ---- inspect modal ---- */
   .modal { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column;
-    background: rgba(8,10,14,.92); backdrop-filter: blur(2px); }
+    background: var(--modal-overlay); backdrop-filter: blur(2px); }
   .modal.hidden { display: none; }
   .modal-bar { display: flex; align-items: center; gap: 12px; padding: 12px 16px;
     border-bottom: 1px solid var(--line); }
-  .modal-bar .title { font-weight: 600; }
+  .modal-bar .title { font-weight: 600; font-family: var(--font-display); }
   .modal-bar .sz { color: var(--muted); font-size: 12.5px; }
   .modal-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
   .modal-actions button { padding: 8px 12px; border-radius: 9px; }
@@ -100,7 +412,6 @@
   .modal-hint { text-align: center; color: var(--muted); font-size: 12px; padding: 8px; }
   .zlevel { color: var(--muted); font-size: 12.5px; min-width: 48px; text-align: center; }
 
-  /* ---- result sections (one per input + run) ---- */
   .section { border: 1px solid var(--line); border-radius: var(--radius);
     margin-top: 18px; overflow: hidden; background: var(--panel2); }
   .section-head { display: flex; align-items: center; gap: 12px; padding: 12px 14px;
@@ -113,24 +424,97 @@
   .section-remove { padding: 6px 10px; border-radius: 8px; }
   .section .grid { margin: 0; padding: 16px; }
 
-  /* ---- spinners ---- */
   @keyframes spin { to { transform: rotate(360deg); } }
-  .spinner { width: 26px; height: 26px; border: 3px solid rgba(255,255,255,.25);
-    border-top-color: var(--accent2); border-radius: 50%; animation: spin .8s linear infinite; }
-  .preview .spinner { border-color: #d6d6d6; border-top-color: var(--accent2); }
+  .spinner { width: 26px; height: 26px; border: 3px solid var(--spinner-track);
+    border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+  .preview .spinner { border-color: #d6d6d6; border-top-color: var(--accent); }
   .spinner.sm { width: 14px; height: 14px; border-width: 2px; display: inline-block;
     vertical-align: -2px; margin-right: 7px; }
-  .card.pending .size { color: var(--accent); }
+  .card.pending .size { color: var(--accent-bright); }
 
-  /* ---- tabs ---- */
-  .tabs { display: flex; gap: 4px; margin-top: 16px; border-bottom: 1px solid var(--line); }
-  .tab { background: transparent; color: var(--muted); border: 0; border-bottom: 2px solid transparent;
-    border-radius: 0; padding: 9px 14px; font-size: 14px; font-weight: 600; cursor: pointer; }
-  .tab:hover { color: var(--fg); }
-  .tab.active { color: var(--fg); border-bottom-color: var(--accent2); }
+  /* ---- tool tabs ---- */
+  .tabs { display: flex; gap: 6px; margin-top: 4px; }
+  .tab {
+    background: var(--panel);
+    color: var(--muted);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 9px 16px;
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  .tab:hover { color: var(--fg); border-color: var(--muted); }
+  .tab.active {
+    color: var(--btn-on-accent);
+    background: linear-gradient(180deg, var(--accent-bright), var(--accent-dim));
+    border-color: transparent;
+  }
   .tab-panel.hidden { display: none; }
 
-  /* ---- multicrop editor ---- */
+  /* ---- static pages ---- */
+  .static-page { animation: fadeUp .45s ease both; max-width: 720px; }
+  .static-page h1 {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    margin: 0 0 8px;
+  }
+  .static-page .lead { color: var(--muted); font-size: 1.05rem; margin: 0 0 28px; line-height: 1.6; }
+  .static-page h2 {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    margin: 28px 0 10px;
+    color: var(--accent-bright);
+  }
+  .static-page p, .static-page li { color: var(--text-body); }
+  .static-page ul { padding-left: 1.2rem; }
+  .static-page li { margin-bottom: 8px; }
+  .static-page a { color: var(--accent-bright); }
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+    margin: 24px 0;
+  }
+  .feature-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+  .feature-card .icon { font-size: 1.5rem; margin-bottom: 8px; }
+  .feature-card h3 { margin: 0 0 6px; font-size: 15px; font-weight: 600; color: var(--fg); }
+  .feature-card p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .license-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 14px;
+  }
+  .license-table th, .license-table td {
+    text-align: left;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+  }
+  .license-table th { background: var(--panel2); color: var(--fg); font-weight: 600; }
+  .license-table td { background: var(--panel); color: var(--muted); }
+  .callout {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin: 20px 0;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .callout strong { color: var(--fg); }
+
+  /* ---- multicrop ---- */
   .mc-stage-wrap { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
     padding: 14px; display: grid; place-items: center; margin-top: 4px; }
   .mc-canvas { position: relative; line-height: 0; max-width: 100%;
@@ -139,11 +523,11 @@
     background-size: 18px 18px; background-position: 0 0,0 9px,9px -9px,-9px 0; }
   .mc-canvas img { display: block; max-width: 100%; max-height: 70vh; -webkit-user-drag: none; user-select: none; }
   .mc-overlay { position: absolute; inset: 0; cursor: crosshair; touch-action: none; }
-  .mc-box { position: absolute; border: 2px solid var(--accent); background: rgba(110,168,254,.18);
+  .mc-box { position: absolute; border: 2px solid var(--accent); background: rgba(212,165,116,.18);
     box-sizing: border-box; }
   .mc-box.drawing { border-style: dashed; }
   .mc-box-tag { position: absolute; top: -1px; left: -1px; transform: translateY(-100%);
-    background: var(--accent2); color: #fff; font: 600 11px/1.4 ui-sans-serif, system-ui;
+    background: var(--accent-dim); color: #fff; font: 600 11px/1.4 var(--font-body);
     padding: 1px 6px; border-radius: 6px 6px 6px 0; white-space: nowrap; max-width: 180px;
     overflow: hidden; text-overflow: ellipsis; }
   .mc-box-x { position: absolute; top: -10px; right: -10px; width: 20px; height: 20px; padding: 0;
@@ -154,97 +538,213 @@
     border-radius: 10px; padding: 6px 8px 6px 10px; }
   .mc-chip-i { color: var(--accent); font-weight: 700; font-size: 12.5px; min-width: 14px; }
   .mc-chip-label { background: var(--panel2); border: 1px solid var(--line); color: var(--fg);
-    border-radius: 7px; padding: 4px 8px; font-size: 12.5px; width: 120px; }
+    border-radius: 7px; padding: 4px 8px; font-size: 12.5px; width: 120px; font-family: inherit; }
   .mc-chip-dim { color: var(--muted); font-size: 12px; }
   .mc-chip-x { background: transparent; color: var(--muted); border: 0; font-size: 16px; cursor: pointer;
     padding: 0 4px; }
   .mc-chip-x:hover { color: var(--err); }
+
+  @media (max-width: 640px) {
+    .site-header { padding: 0 14px; height: auto; min-height: var(--header-h); flex-wrap: wrap; padding-top: 10px; padding-bottom: 10px; }
+    .site-nav { margin-left: 0; width: 100%; justify-content: flex-start; }
+    main { padding: 16px 14px 56px; }
+    .donate-banner { font-size: 12px; padding-right: 40px; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1>Path<span>Smith</span></h1>
-  <div class="sub" id="tagline">Raster → SVG. Pick a variant, or generate several and compare side by side.</div>
-  <nav class="tabs">
-    <button class="tab active" data-tab="vectorize">Vectorize</button>
-    <button class="tab" data-tab="multicrop">Multicrop</button>
-  </nav>
-</header>
-<main>
-  <!-- ========================= VECTORIZE ========================= -->
-  <section id="tab-vectorize" class="tab-panel">
-    <div class="drop" id="drop">
-      <input type="file" id="file" accept="image/*" hidden />
-      <div id="dropInner">
-        <strong>Drop an image here</strong> or click to choose<br />
-        <small>PNG, JPEG, WebP, GIF, BMP</small>
+<div class="shell">
+  <div class="donate-banner" id="donate-banner" role="region" aria-label="Support PathSmith">
+    <p>PathSmith is free &amp; open source — <a href="https://ko-fi.com/theanimatrix" target="_blank" rel="noopener">support development</a> if it saves you time.</p>
+    <button type="button" class="donate-dismiss" id="donate-dismiss" aria-label="Dismiss banner">×</button>
+  </div>
+
+  <header class="site-header">
+    <a href="/" class="brand" data-nav-home>
+      <span class="brand-mark" aria-hidden="true">
+        <img src="/logo.png" width="40" height="33" alt="" />
+      </span>
+      <span class="brand-name">Path<em>Smith</em></span>
+      <span class="version-badge" title="Release version">v__PATHSMITH_VERSION__</span>
+    </a>
+    <nav class="site-nav" aria-label="Site">
+      <a href="/" class="nav-link" data-page="app">Tools</a>
+      <a href="/about" class="nav-link" data-page="about">About</a>
+      <a href="/license" class="nav-link" data-page="license">License</a>
+      <a href="https://github.com/TheAnimatrix/PathSmith" class="nav-link nav-github" id="nav-github" target="_blank" rel="noopener noreferrer">
+        GitHub
+        <span class="gh-stars" id="gh-stars" hidden>
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25z"/></svg>
+          <span id="gh-stars-count"></span>
+        </span>
+      </a>
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Switch to light theme" title="Toggle theme">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+        </svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M21 14.5A8.5 8.5 0 1 1 9.5 3a7 7 0 0 0 11.5 11.5z"/>
+        </svg>
+      </button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ========================= APP (tools) ========================= -->
+    <div id="page-app" class="page-view" data-page-view="app">
+      <div class="app-hero">
+        <div class="sub" id="tagline">Raster → SVG. Pick a variant, or generate several and compare side by side.</div>
+        <nav class="tabs" aria-label="Tools">
+          <button type="button" class="tab active" data-tab="vectorize">Vectorize</button>
+          <button type="button" class="tab" data-tab="multicrop">Multicrop</button>
+        </nav>
       </div>
+
+      <section id="tab-vectorize" class="tab-panel">
+        <div class="drop" id="drop">
+          <input type="file" id="file" accept="image/*" hidden />
+          <div id="dropInner">
+            <strong>Drop an image here</strong> or click to choose<br />
+            <small>PNG, JPEG, WebP, GIF, BMP</small>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="row toolbar">
+            <button type="button" id="selAll" class="ghost">Select all</button>
+            <button type="button" id="selNone" class="ghost">Clear</button>
+          </div>
+          <div class="row toolbar" style="margin-left:auto">
+            <button type="button" id="go" disabled>Generate</button>
+            <button type="button" id="zip" class="ghost" disabled>Download all (.zip)</button>
+            <button type="button" id="clearOut" class="ghost" hidden>Clear results</button>
+          </div>
+        </div>
+        <div id="variants" class="variants"></div>
+        <div class="status" id="status"></div>
+        <div id="results"></div>
+      </section>
+
+      <section id="tab-multicrop" class="tab-panel hidden">
+        <div class="drop" id="mc-drop">
+          <input type="file" id="mc-file" accept="image/*" hidden />
+          <div id="mc-dropInner">
+            <strong>Drop an image here</strong> or click to choose<br />
+            <small>Then drag rectangles on it to mark crops</small>
+          </div>
+        </div>
+
+        <div id="mc-editor" hidden>
+          <div class="controls">
+            <div class="row toolbar">
+              <span class="status" id="mc-hint">Drag on the image to add a crop box.</span>
+            </div>
+            <div class="row toolbar" style="margin-left:auto">
+              <button type="button" id="mc-go" disabled>Generate crops</button>
+              <button type="button" id="mc-zip" class="ghost" disabled>Download all (.zip)</button>
+              <button type="button" id="mc-clear" class="ghost">Clear boxes</button>
+              <button type="button" id="mc-replace" class="ghost">Replace image</button>
+              <button type="button" id="mc-clearOut" class="ghost" hidden>Clear results</button>
+            </div>
+          </div>
+          <div class="mc-stage-wrap">
+            <div class="mc-canvas" id="mc-canvas">
+              <img id="mc-img" alt="" />
+              <div class="mc-overlay" id="mc-overlay"></div>
+            </div>
+          </div>
+          <div id="mc-boxlist" class="mc-boxlist"></div>
+        </div>
+        <div class="status" id="mc-status"></div>
+        <div id="mc-results"></div>
+      </section>
     </div>
 
-    <div class="controls">
-      <div class="row toolbar">
-        <button id="selAll" class="ghost">Select all</button>
-        <button id="selNone" class="ghost">Clear</button>
-      </div>
-      <div class="row toolbar" style="margin-left:auto">
-        <button id="go" disabled>Generate</button>
-        <button id="zip" class="ghost" disabled>Download all (.zip)</button>
-        <button id="clearOut" class="ghost" hidden>Clear results</button>
-      </div>
-    </div>
-    <div id="variants" class="variants"></div>
-    <div class="status" id="status"></div>
-    <div id="results"></div>
-  </section>
+    <!-- ========================= ABOUT ========================= -->
+    <article id="page-about" class="page-view static-page" data-page-view="about" hidden>
+      <h1>About PathSmith <span class="version-badge">v__PATHSMITH_VERSION__</span></h1>
+      <p class="lead">A fast, self-hostable image toolkit in Rust — vectorize rasters into clean SVGs, or slice one image into many crops in a single pass.</p>
 
-  <!-- ========================= MULTICROP ========================= -->
-  <section id="tab-multicrop" class="tab-panel hidden">
-    <div class="drop" id="mc-drop">
-      <input type="file" id="mc-file" accept="image/*" hidden />
-      <div id="mc-dropInner">
-        <strong>Drop an image here</strong> or click to choose<br />
-        <small>Then drag rectangles on it to mark crops</small>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="icon">🖼️ → 📐</div>
+          <h3>Vectorize</h3>
+          <p>Raster to SVG with multiple tracing pipelines. Compare variants side by side and pick the best fit.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">✂️</div>
+          <h3>Multicrop</h3>
+          <p>Draw several boxes on one image and export every crop at once — boxes that overhang are trimmed, not rejected.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">⚡</div>
+          <h3>Pure Rust</h3>
+          <p>In-memory pipeline with parallel conversions. Same core powers the CLI, server, WASM, and library.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">🔒</div>
+          <h3>Offline &amp; private</h3>
+          <p>Self-host in a ~44&nbsp;MB container. Your images never leave your machine unless you choose to upload them elsewhere.</p>
+        </div>
       </div>
-    </div>
 
-    <div id="mc-editor" hidden>
-      <div class="controls">
-        <div class="row toolbar">
-          <span class="status" id="mc-hint">Drag on the image to add a crop box.</span>
-        </div>
-        <div class="row toolbar" style="margin-left:auto">
-          <button id="mc-go" disabled>Generate crops</button>
-          <button id="mc-zip" class="ghost" disabled>Download all (.zip)</button>
-          <button id="mc-clear" class="ghost">Clear boxes</button>
-          <button id="mc-replace" class="ghost">Replace image</button>
-          <button id="mc-clearOut" class="ghost" hidden>Clear results</button>
-        </div>
+      <h2>Surfaces</h2>
+      <ul>
+        <li><strong>Web app</strong> — this UI, for point-and-click workflows.</li>
+        <li><strong>HTTP API</strong> — script conversions and crops from any language.</li>
+        <li><strong>CLI</strong> — batch jobs, benchmarking, and CI pipelines.</li>
+        <li><strong>Docker</strong> — one command to run the full stack.</li>
+        <li><strong>WASM / npm</strong> — vectorize entirely in the browser with no upload.</li>
+        <li><strong>Rust library</strong> — embed <code>pathsmith-core</code> in your own apps.</li>
+      </ul>
+
+      <h2>Built by</h2>
+      <p>
+        PathSmith is developed by
+        <a href="https://github.com/TheAnimatrix" target="_blank" rel="noopener">TheAnimatrix</a>.
+        Source and issues live on
+        <a href="https://github.com/TheAnimatrix/PathSmith" target="_blank" rel="noopener">GitHub</a>.
+      </p>
+    </article>
+
+    <!-- ========================= LICENSE ========================= -->
+    <article id="page-license" class="page-view static-page" data-page-view="license" hidden>
+      <h1>License</h1>
+      <p class="lead">PathSmith is open source. Choose the license that matches how you use the software.</p>
+
+      <p>
+        PathSmith is licensed under the
+        <strong>GNU Affero General Public License v3.0 or later</strong>.
+        You may use, modify, and distribute the software under those terms.
+        Commercial licensing is available on request via
+        <a href="https://github.com/TheAnimatrix/PathSmith/issues" target="_blank" rel="noopener">GitHub</a>.
+      </p>
+      <div class="callout">
+        <strong>Network use (§13):</strong> If you run a modified version to provide a service over a network,
+        you must offer the complete corresponding source of your modified version to its users.
       </div>
-      <div class="mc-stage-wrap">
-        <div class="mc-canvas" id="mc-canvas">
-          <img id="mc-img" alt="" />
-          <div class="mc-overlay" id="mc-overlay"></div>
-        </div>
-      </div>
-      <div id="mc-boxlist" class="mc-boxlist"></div>
-    </div>
-    <div class="status" id="mc-status"></div>
-    <div id="mc-results"></div>
-  </section>
-</main>
+      <p>
+        Full license text:
+        <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">gnu.org/licenses/agpl-3.0</a>
+      </p>
+
+      <p><small>Copyright © 2026 TheAnimatrix.</small></p>
+    </article>
+  </main>
+</div>
 
 <div class="modal hidden" id="modal">
   <div class="modal-bar">
     <span class="title" id="m-title"></span>
     <span class="sz" id="m-size"></span>
     <div class="modal-actions">
-      <button class="ghost icon" id="m-out" title="Zoom out">−</button>
+      <button type="button" class="ghost icon" id="m-out" title="Zoom out">−</button>
       <span class="zlevel" id="m-zoom">100%</span>
-      <button class="ghost icon" id="m-in" title="Zoom in">+</button>
-      <button class="ghost" id="m-fit">Fit</button>
-      <button class="ghost" id="m-actual">100%</button>
-      <a class="dl" id="m-dl" download><button>Download</button></a>
-      <button id="m-close" title="Close (Esc)">✕</button>
+      <button type="button" class="ghost icon" id="m-in" title="Zoom in">+</button>
+      <button type="button" class="ghost" id="m-fit">Fit</button>
+      <button type="button" class="ghost" id="m-actual">100%</button>
+      <a class="dl" id="m-dl" download><button type="button">Download</button></a>
+      <button type="button" id="m-close" title="Close (Esc)">✕</button>
     </div>
   </div>
   <div class="modal-stage" id="m-stage">
@@ -255,6 +755,148 @@
 
 <script>
 const $ = (s) => document.querySelector(s);
+
+// ---- routing (About / License / Tools) ------------------------------------
+const VALID_PAGES = new Set(['app', 'about', 'license']);
+
+function pathToPage() {
+  const seg = location.pathname.replace(/^\//, '').split('/')[0].toLowerCase();
+  return VALID_PAGES.has(seg) ? seg : 'app';
+}
+
+function navigate(page, push = true) {
+  if (!VALID_PAGES.has(page)) page = 'app';
+  const path = page === 'app' ? '/' : '/' + page;
+  if (push) history.pushState({ page }, '', path);
+  document.title = page === 'app' ? 'PathSmith' : `PathSmith — ${page[0].toUpperCase()}${page.slice(1)}`;
+  document.querySelectorAll('[data-page-view]').forEach((el) => {
+    el.hidden = el.dataset.pageView !== page;
+  });
+  document.querySelectorAll('.nav-link[data-page]').forEach((a) => {
+    a.classList.toggle('active', a.dataset.page === page);
+  });
+}
+
+document.querySelectorAll('.nav-link[data-page], .brand[data-nav-home]').forEach((a) => {
+  a.addEventListener('click', (e) => {
+    const page = a.dataset.page || 'app';
+    if (a.hostname === location.hostname || !a.hostname) {
+      e.preventDefault();
+      navigate(page);
+    }
+  });
+});
+window.addEventListener('popstate', () => navigate(pathToPage(), false));
+navigate(pathToPage(), false);
+
+// ---- theme (light / dark) ------------------------------------------------
+(function () {
+  const key = 'pathsmith-theme';
+  const root = document.documentElement;
+  const btn = $('#theme-toggle');
+  function apply(theme) {
+    root.dataset.theme = theme;
+    localStorage.setItem(key, theme);
+    const light = theme === 'light';
+    btn.setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
+    btn.title = light ? 'Dark mode' : 'Light mode';
+  }
+  btn.addEventListener('click', () => {
+    apply(root.dataset.theme === 'light' ? 'dark' : 'light');
+  });
+})();
+
+// ---- donate banner dismiss -----------------------------------------------
+(function () {
+  const key = 'pathsmith-donate-dismiss';
+  const banner = $('#donate-banner');
+  if (sessionStorage.getItem(key)) banner.classList.add('hidden');
+  $('#donate-dismiss').addEventListener('click', () => {
+    banner.classList.add('hidden');
+    sessionStorage.setItem(key, '1');
+  });
+})();
+
+// ---- GitHub star count (always revalidate; never stick on cached 0) --------
+(function () {
+  const REPO = 'TheAnimatrix/PathSmith';
+  const CACHE_KEY = 'pathsmith-gh-stars-v2';
+  const CACHE_MS = 5 * 60 * 1000;
+  const wrap = $('#gh-stars');
+  const countEl = $('#gh-stars-count');
+  const link = $('#nav-github');
+  if (!wrap || !countEl || !link) return;
+
+  function formatStars(n) {
+    if (n >= 10000) return Math.round(n / 1000) + 'k';
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    return String(n);
+  }
+
+  function show(n) {
+    countEl.textContent = formatStars(n);
+    wrap.hidden = false;
+    link.setAttribute('aria-label', `PathSmith on GitHub, ${n.toLocaleString()} stars`);
+  }
+
+  function readCache() {
+    try {
+      const raw = sessionStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const { n, t } = JSON.parse(raw);
+      if (typeof n !== 'number' || n < 1 || Date.now() - t >= CACHE_MS) return null;
+      return n;
+    } catch {
+      return null;
+    }
+  }
+
+  function writeCache(n) {
+    if (n < 1) return;
+    try {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ n, t: Date.now() }));
+    } catch {}
+  }
+
+  async function fetchStars() {
+    const r = await fetch('/github/stars', { cache: 'no-store' });
+    if (!r.ok) throw new Error('server');
+    const data = await r.json();
+    if (typeof data.stars !== 'number') throw new Error('shape');
+    return data.stars;
+  }
+
+  async function fetchStarsDirect() {
+    const r = await fetch('https://api.github.com/repos/' + REPO, {
+      headers: { Accept: 'application/vnd.github+json' },
+      cache: 'no-store',
+    });
+    if (!r.ok) throw new Error('github');
+    const data = await r.json();
+    if (typeof data.stargazers_count !== 'number') throw new Error('shape');
+    return data.stargazers_count;
+  }
+
+  const cached = readCache();
+  if (cached !== null) show(cached);
+
+  (async () => {
+    let n;
+    try {
+      n = await fetchStars();
+    } catch {
+      try {
+        n = await fetchStarsDirect();
+      } catch {
+        return;
+      }
+    }
+    show(n);
+    writeCache(n);
+  })();
+})();
+
+// ---- vectorize app -------------------------------------------------------
 let file = null;
 let presets = [];
 
@@ -311,13 +953,12 @@ function card(name, svg, errMsg) {
       <div class="name">${name}</div>
       <div class="desc">${desc}</div>
       <div class="foot"><span class="size">${kb} KB</span>
-        <a class="dl" download="${name}.svg" href="${url}"><button class="dl">Download</button></a></div>
+        <a class="dl" download="${name}.svg" href="${url}"><button type="button" class="dl">Download</button></a></div>
     </div>`;
   el.querySelector('.preview').addEventListener('click', () => openModal(name, svg, url, kb));
   return el;
 }
 
-// ---- inspect modal: zoom + pan -------------------------------------------
 const modal = $('#modal'), stage = $('#m-stage'), canvas = $('#m-canvas');
 let view = { scale: 1, tx: 0, ty: 0, base: { w: 0, h: 0 } };
 
@@ -358,7 +999,6 @@ function openModal(name, svg, url, kb) {
   const tmp = document.createElement('div');
   tmp.innerHTML = svg;
   const el = tmp.querySelector('svg');
-  // derive natural size from viewBox or width/height, default 512.
   let w = 512, h = 512;
   const vb = el && el.getAttribute('viewBox');
   if (vb) { const p = vb.split(/[ ,]+/).map(Number); if (p.length === 4) { w = p[2]; h = p[3]; } }
@@ -408,9 +1048,6 @@ $('#m-actual').addEventListener('click', () => {
   view.scale = 1; view.tx = (sw - w) / 2; view.ty = (sh - h) / 2; applyView();
 });
 
-// Shared section presentation used by both Vectorize and Multicrop:
-// a per-run card with the input thumbnail, name, count + timestamp, a ✕ to
-// remove just that run, and a grid for its output cards. Newest run on top.
 function updateClearBtnFor(containerSel, clearSel) {
   $(clearSel).hidden = $(containerSel).children.length === 0;
 }
@@ -428,7 +1065,7 @@ function makeSection(containerSel, clearSel, runFile, countText) {
       <div class="in-sub">${countText}</div>
     </div>
     <span class="when">${when}</span>
-    <button class="ghost section-remove" title="Remove this run">✕</button>`;
+    <button type="button" class="ghost section-remove" title="Remove this run">✕</button>`;
   const grid = document.createElement('div');
   grid.className = 'grid';
   section.append(head, grid);
@@ -436,7 +1073,7 @@ function makeSection(containerSel, clearSel, runFile, countText) {
     section.remove();
     updateClearBtnFor(containerSel, clearSel);
   });
-  $(containerSel).prepend(section); // newest first
+  $(containerSel).prepend(section);
   updateClearBtnFor(containerSel, clearSel);
   return grid;
 }
@@ -445,7 +1082,6 @@ function newSection(runFile, names) {
   return makeSection('#results', '#clearOut', runFile, `${n} variant${n > 1 ? 's' : ''}`);
 }
 
-// pending card with a spinner, shown while a variant is being traced.
 function placeholderCard(name) {
   const desc = (presets.find(p => p.name === name) || {}).description || '';
   const el = document.createElement('div');
@@ -522,7 +1158,6 @@ $('#zip').addEventListener('click', downloadZip);
 $('#clearOut').addEventListener('click', () => { $('#results').innerHTML = ''; updateClearBtnFor('#results', '#clearOut'); $('#status').textContent = ''; });
 loadPresets();
 
-// ===================== tabs =====================
 const TAGLINES = {
   vectorize: 'Raster → SVG. Pick a variant, or generate several and compare side by side.',
   multicrop: 'Upload one image, draw multiple boxes, and get every crop in a single pass.',
@@ -534,9 +1169,9 @@ function showTab(id) {
 }
 document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
 
-// ===================== multicrop =====================
+// ---- multicrop ------------------------------------------------------------
 let mcFile = null;
-let mcBoxes = []; // { x, y, w, h } in natural pixels + { label }
+let mcBoxes = [];
 const mcImg = $('#mc-img'), mcOverlay = $('#mc-overlay');
 
 function mcSetFile(f) {
@@ -568,7 +1203,6 @@ mcDrop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f)
 $('#mc-replace').addEventListener('click', () => { $('#mc-drop').hidden = false; $('#mc-editor').hidden = true; mcInput.value = ''; });
 $('#mc-clear').addEventListener('click', () => { mcBoxes = []; mcRenderBoxes(); mcRenderList(); mcRefresh(); });
 
-// render boxes as percentage-positioned overlays (resize-proof)
 function mcRenderBoxes() {
   mcOverlay.querySelectorAll('.mc-box').forEach(n => n.remove());
   const nw = mcImg.naturalWidth, nh = mcImg.naturalHeight;
@@ -581,7 +1215,7 @@ function mcRenderBoxes() {
     d.style.width = (b.w / nw * 100) + '%';
     d.style.height = (b.h / nh * 100) + '%';
     const name = (b.label && b.label.trim()) || ('crop-' + (i + 1));
-    d.innerHTML = `<span class="mc-box-tag">${name}</span><button class="mc-box-x" title="Remove">×</button>`;
+    d.innerHTML = `<span class="mc-box-tag">${name}</span><button type="button" class="mc-box-x" title="Remove">×</button>`;
     const x = d.querySelector('.mc-box-x');
     x.addEventListener('pointerdown', e => e.stopPropagation());
     x.addEventListener('click', e => { e.stopPropagation(); mcBoxes.splice(i, 1); mcRenderBoxes(); mcRenderList(); mcRefresh(); });
@@ -599,14 +1233,13 @@ function mcRenderList() {
       <span class="mc-chip-i">${i + 1}</span>
       <input class="mc-chip-label" placeholder="crop-${i + 1}" value="${b.label || ''}" />
       <span class="mc-chip-dim">${b.w}×${b.h}</span>
-      <button class="mc-chip-x" title="Remove">×</button>`;
+      <button type="button" class="mc-chip-x" title="Remove">×</button>`;
     chip.querySelector('.mc-chip-label').addEventListener('input', e => { b.label = e.target.value; mcRenderBoxes(); });
     chip.querySelector('.mc-chip-x').addEventListener('click', () => { mcBoxes.splice(i, 1); mcRenderBoxes(); mcRenderList(); mcRefresh(); });
     box.appendChild(chip);
   });
 }
 
-// fraction (0..1) of the image under the pointer
 function mcFrac(e) {
   const r = mcImg.getBoundingClientRect();
   return {
@@ -616,7 +1249,7 @@ function mcFrac(e) {
 }
 let mcDraw = null;
 mcOverlay.addEventListener('pointerdown', e => {
-  if (e.target !== mcOverlay) return; // let box × buttons handle their own clicks
+  if (e.target !== mcOverlay) return;
   e.preventDefault();
   mcOverlay.setPointerCapture(e.pointerId);
   const p = mcFrac(e);
@@ -666,7 +1299,7 @@ function mcCropCard(name, b64, errMsg) {
     <div class="meta">
       <div class="name">${name}</div>
       <div class="foot"><span class="size">${kb} KB</span>
-        <a class="dl" download="${name}.png" href="${src}"><button class="dl">Download</button></a></div>
+        <a class="dl" download="${name}.png" href="${src}"><button type="button" class="dl">Download</button></a></div>
     </div>`;
   el.querySelector('.preview').addEventListener('click', () => openRasterModal(name, src, kb));
   return el;

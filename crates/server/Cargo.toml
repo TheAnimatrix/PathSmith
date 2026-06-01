@@ -1,6 +1,5 @@
-# Copyright (C) 2026 Avarnic
+# Copyright (C) 2026 TheAnimatrix
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Commercial licensing: COMMERCIAL-LICENSE.md — creo@avarnic.com
 
 [package]
 name = "pathsmith-server"
@@ -31,3 +30,5 @@ rayon = "1"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 clap = { version = "4", features = ["derive", "env"] }
 base64 = "0.22"
+# native-tls (Schannel on Windows) avoids ring/rustls C builds on windows-gnu toolchains.
+ureq = { version = "2", default-features = false, features = ["native-tls", "json"] }
