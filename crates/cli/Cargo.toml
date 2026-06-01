@@ -1,0 +1,25 @@
+# Copyright (C) 2026 Avarnic
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial licensing: COMMERCIAL-LICENSE.md — creo@avarnic.com
+
+[package]
+name = "pathsmith-cli"
+description = "CLI for PathSmith: convert a raster to SVG, or benchmark all presets"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "pathsmith"
+path = "src/main.rs"
+
+[dependencies]
+pathsmith-core = { workspace = true }
+image = { workspace = true }
+anyhow = { workspace = true }
+clap = { version = "4", features = ["derive"] }
+rayon = "1"
+resvg = "0.44"
+image-compare = "0.4"

@@ -1,0 +1,16 @@
+# Pipeline I/O (local / generated)
+/input/
+/output/
+
+# Raster images (sources, crops, re-rasterized previews)
+*.png
+
+# Rust build artifacts
+/target/
+# wasm-pack output (generated npm package)
+/crates/wasm/pkg/
+/crates/wasm/pkg-node/
+
+# Python caches (legacy reference tool)
+__pycache__/
+*.pyc

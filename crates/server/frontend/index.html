@@ -1,0 +1,739 @@
+<!doctype html>
+<!--
+ Copyright (C) 2026 Avarnic
+ SPDX-License-Identifier: AGPL-3.0-or-later
+ Commercial licensing: COMMERCIAL-LICENSE.md — creo@avarnic.com
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PathSmith</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --panel2: #1e222b; --line: #2a2f3a;
+    --fg: #e7e9ee; --muted: #9aa3b2; --accent: #6ea8fe; --accent2: #3b82f6;
+    --ok: #34d399; --err: #f87171; --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  header { padding: 28px 24px 8px; max-width: 1100px; margin: 0 auto; }
+  h1 { margin: 0; font-size: 22px; letter-spacing: -0.02em; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); margin-top: 4px; font-size: 13.5px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px 24px 64px; }
+
+  .drop {
+    border: 1.5px dashed var(--line); border-radius: var(--radius);
+    background: var(--panel); padding: 34px; text-align: center; cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .drop.drag { border-color: var(--accent); background: var(--panel2); }
+  .drop strong { color: var(--fg); }
+  .drop small { color: var(--muted); }
+  .thumb { max-height: 88px; border-radius: 8px; margin-bottom: 10px; }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin: 18px 0; }
+  .variants {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 14px;
+  }
+  label.v { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 8px;
+    cursor: pointer; font-size: 13.5px; }
+  label.v:hover { background: var(--panel2); }
+  label.v input { accent-color: var(--accent2); }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  button {
+    background: var(--accent2); color: white; border: 0; border-radius: 10px;
+    padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  button.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); }
+  button:disabled { opacity: .5; cursor: default; }
+  .toolbar { display: flex; gap: 10px; align-items: center; }
+
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px; margin-top: 22px;
+  }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    overflow: hidden; display: flex; flex-direction: column; }
+  .preview {
+    height: 180px; display: grid; place-items: center; padding: 12px; overflow: hidden;
+    background-color: #fff;
+    background-image: linear-gradient(45deg,#eee 25%,transparent 25%),linear-gradient(-45deg,#eee 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eee 75%),linear-gradient(-45deg,transparent 75%,#eee 75%);
+    background-size: 18px 18px; background-position: 0 0,0 9px,9px -9px,-9px 0;
+  }
+  .preview img { max-width: 100%; max-height: 100%; min-width: 0; min-height: 0; object-fit: contain; }
+  .meta { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .meta .name { font-weight: 600; font-size: 13.5px; }
+  .meta .desc { color: var(--muted); font-size: 12px; min-height: 30px; }
+  .meta .foot { display: flex; justify-content: space-between; align-items: center; }
+  .size { color: var(--muted); font-size: 12px; }
+  .dl { font-size: 12.5px; padding: 6px 12px; border-radius: 8px; }
+  .err { color: var(--err); font-size: 12.5px; padding: 12px; }
+  .status { color: var(--muted); font-size: 13px; min-height: 20px; }
+  a.dl { text-decoration: none; }
+  .preview.clickable { cursor: zoom-in; }
+
+  /* ---- inspect modal ---- */
+  .modal { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column;
+    background: rgba(8,10,14,.92); backdrop-filter: blur(2px); }
+  .modal.hidden { display: none; }
+  .modal-bar { display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+    border-bottom: 1px solid var(--line); }
+  .modal-bar .title { font-weight: 600; }
+  .modal-bar .sz { color: var(--muted); font-size: 12.5px; }
+  .modal-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .modal-actions button { padding: 8px 12px; border-radius: 9px; }
+  .modal-actions button.icon { width: 38px; font-size: 18px; line-height: 1; padding: 8px 0; }
+  .modal-stage { flex: 1; overflow: hidden; cursor: grab; position: relative;
+    background-color: #fff;
+    background-image: linear-gradient(45deg,#e9e9e9 25%,transparent 25%),linear-gradient(-45deg,#e9e9e9 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e9e9e9 75%),linear-gradient(-45deg,transparent 75%,#e9e9e9 75%);
+    background-size: 22px 22px; background-position: 0 0,0 11px,11px -11px,-11px 0; }
+  .modal-stage.grabbing { cursor: grabbing; }
+  .modal-canvas { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
+  .modal-canvas svg { display: block; }
+  .modal-hint { text-align: center; color: var(--muted); font-size: 12px; padding: 8px; }
+  .zlevel { color: var(--muted); font-size: 12.5px; min-width: 48px; text-align: center; }
+
+  /* ---- result sections (one per input + run) ---- */
+  .section { border: 1px solid var(--line); border-radius: var(--radius);
+    margin-top: 18px; overflow: hidden; background: var(--panel2); }
+  .section-head { display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+    border-bottom: 1px solid var(--line); }
+  .section-head .in-thumb { height: 42px; width: 42px; object-fit: contain; border-radius: 8px;
+    background: #fff; padding: 3px; }
+  .in-name { font-weight: 600; font-size: 13.5px; }
+  .in-sub { color: var(--muted); font-size: 12px; }
+  .section-head .when { margin-left: auto; color: var(--muted); font-size: 12.5px; }
+  .section-remove { padding: 6px 10px; border-radius: 8px; }
+  .section .grid { margin: 0; padding: 16px; }
+
+  /* ---- spinners ---- */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { width: 26px; height: 26px; border: 3px solid rgba(255,255,255,.25);
+    border-top-color: var(--accent2); border-radius: 50%; animation: spin .8s linear infinite; }
+  .preview .spinner { border-color: #d6d6d6; border-top-color: var(--accent2); }
+  .spinner.sm { width: 14px; height: 14px; border-width: 2px; display: inline-block;
+    vertical-align: -2px; margin-right: 7px; }
+  .card.pending .size { color: var(--accent); }
+
+  /* ---- tabs ---- */
+  .tabs { display: flex; gap: 4px; margin-top: 16px; border-bottom: 1px solid var(--line); }
+  .tab { background: transparent; color: var(--muted); border: 0; border-bottom: 2px solid transparent;
+    border-radius: 0; padding: 9px 14px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .tab:hover { color: var(--fg); }
+  .tab.active { color: var(--fg); border-bottom-color: var(--accent2); }
+  .tab-panel.hidden { display: none; }
+
+  /* ---- multicrop editor ---- */
+  .mc-stage-wrap { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px; display: grid; place-items: center; margin-top: 4px; }
+  .mc-canvas { position: relative; line-height: 0; max-width: 100%;
+    background-color: #fff;
+    background-image: linear-gradient(45deg,#eee 25%,transparent 25%),linear-gradient(-45deg,#eee 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eee 75%),linear-gradient(-45deg,transparent 75%,#eee 75%);
+    background-size: 18px 18px; background-position: 0 0,0 9px,9px -9px,-9px 0; }
+  .mc-canvas img { display: block; max-width: 100%; max-height: 70vh; -webkit-user-drag: none; user-select: none; }
+  .mc-overlay { position: absolute; inset: 0; cursor: crosshair; touch-action: none; }
+  .mc-box { position: absolute; border: 2px solid var(--accent); background: rgba(110,168,254,.18);
+    box-sizing: border-box; }
+  .mc-box.drawing { border-style: dashed; }
+  .mc-box-tag { position: absolute; top: -1px; left: -1px; transform: translateY(-100%);
+    background: var(--accent2); color: #fff; font: 600 11px/1.4 ui-sans-serif, system-ui;
+    padding: 1px 6px; border-radius: 6px 6px 6px 0; white-space: nowrap; max-width: 180px;
+    overflow: hidden; text-overflow: ellipsis; }
+  .mc-box-x { position: absolute; top: -10px; right: -10px; width: 20px; height: 20px; padding: 0;
+    border-radius: 50%; background: var(--err); color: #fff; font-size: 13px; line-height: 1;
+    border: 0; cursor: pointer; display: grid; place-items: center; }
+  .mc-boxlist { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .mc-chip { display: flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 6px 8px 6px 10px; }
+  .mc-chip-i { color: var(--accent); font-weight: 700; font-size: 12.5px; min-width: 14px; }
+  .mc-chip-label { background: var(--panel2); border: 1px solid var(--line); color: var(--fg);
+    border-radius: 7px; padding: 4px 8px; font-size: 12.5px; width: 120px; }
+  .mc-chip-dim { color: var(--muted); font-size: 12px; }
+  .mc-chip-x { background: transparent; color: var(--muted); border: 0; font-size: 16px; cursor: pointer;
+    padding: 0 4px; }
+  .mc-chip-x:hover { color: var(--err); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Path<span>Smith</span></h1>
+  <div class="sub" id="tagline">Raster → SVG. Pick a variant, or generate several and compare side by side.</div>
+  <nav class="tabs">
+    <button class="tab active" data-tab="vectorize">Vectorize</button>
+    <button class="tab" data-tab="multicrop">Multicrop</button>
+  </nav>
+</header>
+<main>
+  <!-- ========================= VECTORIZE ========================= -->
+  <section id="tab-vectorize" class="tab-panel">
+    <div class="drop" id="drop">
+      <input type="file" id="file" accept="image/*" hidden />
+      <div id="dropInner">
+        <strong>Drop an image here</strong> or click to choose<br />
+        <small>PNG, JPEG, WebP, GIF, BMP</small>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="row toolbar">
+        <button id="selAll" class="ghost">Select all</button>
+        <button id="selNone" class="ghost">Clear</button>
+      </div>
+      <div class="row toolbar" style="margin-left:auto">
+        <button id="go" disabled>Generate</button>
+        <button id="zip" class="ghost" disabled>Download all (.zip)</button>
+        <button id="clearOut" class="ghost" hidden>Clear results</button>
+      </div>
+    </div>
+    <div id="variants" class="variants"></div>
+    <div class="status" id="status"></div>
+    <div id="results"></div>
+  </section>
+
+  <!-- ========================= MULTICROP ========================= -->
+  <section id="tab-multicrop" class="tab-panel hidden">
+    <div class="drop" id="mc-drop">
+      <input type="file" id="mc-file" accept="image/*" hidden />
+      <div id="mc-dropInner">
+        <strong>Drop an image here</strong> or click to choose<br />
+        <small>Then drag rectangles on it to mark crops</small>
+      </div>
+    </div>
+
+    <div id="mc-editor" hidden>
+      <div class="controls">
+        <div class="row toolbar">
+          <span class="status" id="mc-hint">Drag on the image to add a crop box.</span>
+        </div>
+        <div class="row toolbar" style="margin-left:auto">
+          <button id="mc-go" disabled>Generate crops</button>
+          <button id="mc-zip" class="ghost" disabled>Download all (.zip)</button>
+          <button id="mc-clear" class="ghost">Clear boxes</button>
+          <button id="mc-replace" class="ghost">Replace image</button>
+          <button id="mc-clearOut" class="ghost" hidden>Clear results</button>
+        </div>
+      </div>
+      <div class="mc-stage-wrap">
+        <div class="mc-canvas" id="mc-canvas">
+          <img id="mc-img" alt="" />
+          <div class="mc-overlay" id="mc-overlay"></div>
+        </div>
+      </div>
+      <div id="mc-boxlist" class="mc-boxlist"></div>
+    </div>
+    <div class="status" id="mc-status"></div>
+    <div id="mc-results"></div>
+  </section>
+</main>
+
+<div class="modal hidden" id="modal">
+  <div class="modal-bar">
+    <span class="title" id="m-title"></span>
+    <span class="sz" id="m-size"></span>
+    <div class="modal-actions">
+      <button class="ghost icon" id="m-out" title="Zoom out">−</button>
+      <span class="zlevel" id="m-zoom">100%</span>
+      <button class="ghost icon" id="m-in" title="Zoom in">+</button>
+      <button class="ghost" id="m-fit">Fit</button>
+      <button class="ghost" id="m-actual">100%</button>
+      <a class="dl" id="m-dl" download><button>Download</button></a>
+      <button id="m-close" title="Close (Esc)">✕</button>
+    </div>
+  </div>
+  <div class="modal-stage" id="m-stage">
+    <div class="modal-canvas" id="m-canvas"></div>
+  </div>
+  <div class="modal-hint">scroll to zoom · drag to pan · double-click to reset · Esc to close</div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let file = null;
+let presets = [];
+
+async function loadPresets() {
+  presets = await (await fetch('/presets')).json();
+  const box = $('#variants');
+  box.innerHTML = '';
+  presets.forEach((p, i) => {
+    const l = document.createElement('label');
+    l.className = 'v';
+    l.title = p.description;
+    l.innerHTML = `<input type="checkbox" value="${p.name}" ${i === 5 ? 'checked' : ''}/> ${p.name}`;
+    box.appendChild(l);
+  });
+}
+const selected = () => [...document.querySelectorAll('#variants input:checked')].map(i => i.value);
+
+function setFile(f) {
+  file = f;
+  const url = URL.createObjectURL(f);
+  $('#dropInner').innerHTML = `<img class="thumb" src="${url}"/><br/><strong>${f.name}</strong> <small>— click to replace</small>`;
+  refresh();
+}
+function refresh() {
+  const n = selected().length;
+  $('#go').disabled = !file || n === 0;
+  $('#zip').disabled = !file || n < 2;
+}
+
+const drop = $('#drop'), input = $('#file');
+drop.addEventListener('click', () => input.click());
+input.addEventListener('change', e => { if (e.target.files[0]) setFile(e.target.files[0]); });
+;['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('drag'); }));
+;['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('drag'); }));
+drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) setFile(f); });
+$('#variants').addEventListener('change', refresh);
+$('#selAll').addEventListener('click', () => { document.querySelectorAll('#variants input').forEach(i => i.checked = true); refresh(); });
+$('#selNone').addEventListener('click', () => { document.querySelectorAll('#variants input').forEach(i => i.checked = false); refresh(); });
+
+function card(name, svg, errMsg) {
+  const desc = (presets.find(p => p.name === name) || {}).description || '';
+  const el = document.createElement('div');
+  el.className = 'card';
+  if (errMsg) {
+    el.innerHTML = `<div class="meta"><div class="name">${name}</div><div class="err">${errMsg}</div></div>`;
+    return el;
+  }
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const kb = (svg.length / 1024).toFixed(1);
+  el.innerHTML = `
+    <div class="preview clickable" title="Click to inspect"><img src="${url}" alt="${name}"/></div>
+    <div class="meta">
+      <div class="name">${name}</div>
+      <div class="desc">${desc}</div>
+      <div class="foot"><span class="size">${kb} KB</span>
+        <a class="dl" download="${name}.svg" href="${url}"><button class="dl">Download</button></a></div>
+    </div>`;
+  el.querySelector('.preview').addEventListener('click', () => openModal(name, svg, url, kb));
+  return el;
+}
+
+// ---- inspect modal: zoom + pan -------------------------------------------
+const modal = $('#modal'), stage = $('#m-stage'), canvas = $('#m-canvas');
+let view = { scale: 1, tx: 0, ty: 0, base: { w: 0, h: 0 } };
+
+function applyView() {
+  canvas.style.transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.scale})`;
+  $('#m-zoom').textContent = Math.round(view.scale * 100) + '%';
+}
+function fitView() {
+  const sw = stage.clientWidth, sh = stage.clientHeight;
+  const { w, h } = view.base;
+  if (!w || !h) return;
+  const s = Math.min(sw / w, sh / h) * 0.92;
+  view.scale = s;
+  view.tx = (sw - w * s) / 2;
+  view.ty = (sh - h * s) / 2;
+  applyView();
+}
+function zoomAt(px, py, factor) {
+  const ns = Math.min(Math.max(view.scale * factor, 0.05), 60);
+  view.tx = px - (px - view.tx) * (ns / view.scale);
+  view.ty = py - (py - view.ty) * (ns / view.scale);
+  view.scale = ns;
+  applyView();
+}
+
+function openModalNode(title, sizeText, dlHref, dlName, node, w, h) {
+  $('#m-title').textContent = title;
+  $('#m-size').textContent = sizeText;
+  $('#m-dl').href = dlHref;
+  $('#m-dl').download = dlName;
+  canvas.innerHTML = '';
+  canvas.appendChild(node);
+  view.base = { w, h };
+  modal.classList.remove('hidden');
+  fitView();
+}
+function openModal(name, svg, url, kb) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = svg;
+  const el = tmp.querySelector('svg');
+  // derive natural size from viewBox or width/height, default 512.
+  let w = 512, h = 512;
+  const vb = el && el.getAttribute('viewBox');
+  if (vb) { const p = vb.split(/[ ,]+/).map(Number); if (p.length === 4) { w = p[2]; h = p[3]; } }
+  else if (el) { w = parseFloat(el.getAttribute('width')) || w; h = parseFloat(el.getAttribute('height')) || h; }
+  if (el) { el.style.width = w + 'px'; el.style.height = h + 'px'; }
+  openModalNode(name, kb + ' KB', url, name + '.svg', el || tmp, w, h);
+}
+function openRasterModal(name, src, kb) {
+  const img = new Image();
+  img.onload = () => {
+    const w = img.naturalWidth, h = img.naturalHeight;
+    img.style.width = w + 'px'; img.style.height = h + 'px';
+    openModalNode(name, kb + ' KB', src, name + '.png', img, w, h);
+  };
+  img.src = src;
+}
+function closeModal() { modal.classList.add('hidden'); canvas.innerHTML = ''; }
+
+stage.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const r = stage.getBoundingClientRect();
+  zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.12 : 1 / 1.12);
+}, { passive: false });
+
+let drag = null;
+stage.addEventListener('pointerdown', (e) => {
+  drag = { x: e.clientX, y: e.clientY, tx: view.tx, ty: view.ty };
+  stage.classList.add('grabbing'); stage.setPointerCapture(e.pointerId);
+});
+stage.addEventListener('pointermove', (e) => {
+  if (!drag) return;
+  view.tx = drag.tx + (e.clientX - drag.x);
+  view.ty = drag.ty + (e.clientY - drag.y);
+  applyView();
+});
+stage.addEventListener('pointerup', (e) => { drag = null; stage.classList.remove('grabbing'); try { stage.releasePointerCapture(e.pointerId); } catch {} });
+stage.addEventListener('dblclick', fitView);
+
+$('#m-close').addEventListener('click', closeModal);
+modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal(); });
+$('#m-in').addEventListener('click', () => zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, 1.25));
+$('#m-out').addEventListener('click', () => zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, 1 / 1.25));
+$('#m-fit').addEventListener('click', fitView);
+$('#m-actual').addEventListener('click', () => {
+  const sw = stage.clientWidth, sh = stage.clientHeight, { w, h } = view.base;
+  view.scale = 1; view.tx = (sw - w) / 2; view.ty = (sh - h) / 2; applyView();
+});
+
+// Shared section presentation used by both Vectorize and Multicrop:
+// a per-run card with the input thumbnail, name, count + timestamp, a ✕ to
+// remove just that run, and a grid for its output cards. Newest run on top.
+function updateClearBtnFor(containerSel, clearSel) {
+  $(clearSel).hidden = $(containerSel).children.length === 0;
+}
+function makeSection(containerSel, clearSel, runFile, countText) {
+  const section = document.createElement('div');
+  section.className = 'section';
+  const head = document.createElement('div');
+  head.className = 'section-head';
+  const thumb = URL.createObjectURL(runFile);
+  const when = new Date().toLocaleString();
+  head.innerHTML = `
+    <img class="in-thumb" src="${thumb}" alt=""/>
+    <div>
+      <div class="in-name">${runFile.name}</div>
+      <div class="in-sub">${countText}</div>
+    </div>
+    <span class="when">${when}</span>
+    <button class="ghost section-remove" title="Remove this run">✕</button>`;
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+  section.append(head, grid);
+  head.querySelector('.section-remove').addEventListener('click', () => {
+    section.remove();
+    updateClearBtnFor(containerSel, clearSel);
+  });
+  $(containerSel).prepend(section); // newest first
+  updateClearBtnFor(containerSel, clearSel);
+  return grid;
+}
+function newSection(runFile, names) {
+  const n = names.length;
+  return makeSection('#results', '#clearOut', runFile, `${n} variant${n > 1 ? 's' : ''}`);
+}
+
+// pending card with a spinner, shown while a variant is being traced.
+function placeholderCard(name) {
+  const desc = (presets.find(p => p.name === name) || {}).description || '';
+  const el = document.createElement('div');
+  el.className = 'card pending';
+  el.innerHTML = `
+    <div class="preview"><div class="spinner"></div></div>
+    <div class="meta">
+      <div class="name">${name}</div>
+      <div class="desc">${desc}</div>
+      <div class="foot"><span class="size">tracing…</span></div>
+    </div>`;
+  return el;
+}
+
+function setStatus(spin, text) {
+  $('#status').innerHTML = (spin ? '<span class="spinner sm"></span>' : '') + (text || '');
+}
+function setLoading(btn, on, label) {
+  if (on) { btn.dataset.html = btn.innerHTML; btn.innerHTML = `<span class="spinner sm"></span>${label}`; btn.disabled = true; }
+  else if (btn.dataset.html !== undefined) { btn.innerHTML = btn.dataset.html; }
+}
+
+async function generate() {
+  const names = selected();
+  const runFile = file;
+  const grid = newSection(runFile, names);
+  names.forEach(n => grid.appendChild(placeholderCard(n)));
+  setStatus(true, `Tracing ${names.length} variant${names.length > 1 ? 's' : ''}…`);
+  setLoading($('#go'), true, 'Generating…');
+  try {
+    if (names.length === 1) {
+      const r = await fetch(`/convert?pipeline=${encodeURIComponent(names[0])}`, { method: 'POST', body: runFile });
+      const text = await r.text();
+      grid.innerHTML = '';
+      grid.appendChild(card(names[0], r.ok ? text : null, r.ok ? null : text));
+    } else {
+      const r = await fetch(`/convert/batch?pipelines=${names.map(encodeURIComponent).join(',')}`, { method: 'POST', body: runFile });
+      const data = await r.json();
+      grid.innerHTML = '';
+      names.forEach(n => {
+        if (data.results[n]) grid.appendChild(card(n, data.results[n].svg, null));
+        else grid.appendChild(card(n, null, data.errors[n] || 'failed'));
+      });
+    }
+    setStatus(false, 'Done.');
+  } catch (e) {
+    setStatus(false, 'Error: ' + e);
+  }
+  setLoading($('#go'), false);
+  refresh();
+}
+
+async function downloadZip() {
+  const names = selected();
+  setLoading($('#zip'), true, 'Zipping…');
+  setStatus(true, 'Building zip…');
+  try {
+    const r = await fetch(`/convert/batch?zip=1&pipelines=${names.map(encodeURIComponent).join(',')}`, { method: 'POST', body: file });
+    const blob = await r.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'pathsmith-variants.zip';
+    a.click();
+    setStatus(false, 'Done.');
+  } catch (e) {
+    setStatus(false, 'Error: ' + e);
+  }
+  setLoading($('#zip'), false);
+  refresh();
+}
+
+$('#go').addEventListener('click', generate);
+$('#zip').addEventListener('click', downloadZip);
+$('#clearOut').addEventListener('click', () => { $('#results').innerHTML = ''; updateClearBtnFor('#results', '#clearOut'); $('#status').textContent = ''; });
+loadPresets();
+
+// ===================== tabs =====================
+const TAGLINES = {
+  vectorize: 'Raster → SVG. Pick a variant, or generate several and compare side by side.',
+  multicrop: 'Upload one image, draw multiple boxes, and get every crop in a single pass.',
+};
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('hidden', p.id !== 'tab-' + id));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+  $('#tagline').textContent = TAGLINES[id] || '';
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
+
+// ===================== multicrop =====================
+let mcFile = null;
+let mcBoxes = []; // { x, y, w, h } in natural pixels + { label }
+const mcImg = $('#mc-img'), mcOverlay = $('#mc-overlay');
+
+function mcSetFile(f) {
+  mcFile = f;
+  mcBoxes = [];
+  mcImg.onload = mcRenderBoxes;
+  mcImg.src = URL.createObjectURL(f);
+  $('#mc-drop').hidden = true;
+  $('#mc-editor').hidden = false;
+  $('#mc-status').textContent = '';
+  mcRenderList();
+  mcRefresh();
+}
+function mcRefresh() {
+  const n = mcBoxes.length;
+  $('#mc-go').disabled = !mcFile || n === 0;
+  $('#mc-zip').disabled = !mcFile || n < 2;
+  $('#mc-hint').textContent = n
+    ? `${n} box${n > 1 ? 'es' : ''} — Generate crops, or keep drawing.`
+    : 'Drag on the image to add a crop box.';
+}
+
+const mcDrop = $('#mc-drop'), mcInput = $('#mc-file');
+mcDrop.addEventListener('click', () => mcInput.click());
+mcInput.addEventListener('change', e => { if (e.target.files[0]) mcSetFile(e.target.files[0]); });
+;['dragenter','dragover'].forEach(ev => mcDrop.addEventListener(ev, e => { e.preventDefault(); mcDrop.classList.add('drag'); }));
+;['dragleave','drop'].forEach(ev => mcDrop.addEventListener(ev, e => { e.preventDefault(); mcDrop.classList.remove('drag'); }));
+mcDrop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) mcSetFile(f); });
+$('#mc-replace').addEventListener('click', () => { $('#mc-drop').hidden = false; $('#mc-editor').hidden = true; mcInput.value = ''; });
+$('#mc-clear').addEventListener('click', () => { mcBoxes = []; mcRenderBoxes(); mcRenderList(); mcRefresh(); });
+
+// render boxes as percentage-positioned overlays (resize-proof)
+function mcRenderBoxes() {
+  mcOverlay.querySelectorAll('.mc-box').forEach(n => n.remove());
+  const nw = mcImg.naturalWidth, nh = mcImg.naturalHeight;
+  if (!nw || !nh) return;
+  mcBoxes.forEach((b, i) => {
+    const d = document.createElement('div');
+    d.className = 'mc-box';
+    d.style.left = (b.x / nw * 100) + '%';
+    d.style.top = (b.y / nh * 100) + '%';
+    d.style.width = (b.w / nw * 100) + '%';
+    d.style.height = (b.h / nh * 100) + '%';
+    const name = (b.label && b.label.trim()) || ('crop-' + (i + 1));
+    d.innerHTML = `<span class="mc-box-tag">${name}</span><button class="mc-box-x" title="Remove">×</button>`;
+    const x = d.querySelector('.mc-box-x');
+    x.addEventListener('pointerdown', e => e.stopPropagation());
+    x.addEventListener('click', e => { e.stopPropagation(); mcBoxes.splice(i, 1); mcRenderBoxes(); mcRenderList(); mcRefresh(); });
+    mcOverlay.appendChild(d);
+  });
+}
+
+function mcRenderList() {
+  const box = $('#mc-boxlist');
+  box.innerHTML = '';
+  mcBoxes.forEach((b, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'mc-chip';
+    chip.innerHTML = `
+      <span class="mc-chip-i">${i + 1}</span>
+      <input class="mc-chip-label" placeholder="crop-${i + 1}" value="${b.label || ''}" />
+      <span class="mc-chip-dim">${b.w}×${b.h}</span>
+      <button class="mc-chip-x" title="Remove">×</button>`;
+    chip.querySelector('.mc-chip-label').addEventListener('input', e => { b.label = e.target.value; mcRenderBoxes(); });
+    chip.querySelector('.mc-chip-x').addEventListener('click', () => { mcBoxes.splice(i, 1); mcRenderBoxes(); mcRenderList(); mcRefresh(); });
+    box.appendChild(chip);
+  });
+}
+
+// fraction (0..1) of the image under the pointer
+function mcFrac(e) {
+  const r = mcImg.getBoundingClientRect();
+  return {
+    fx: Math.min(Math.max((e.clientX - r.left) / r.width, 0), 1),
+    fy: Math.min(Math.max((e.clientY - r.top) / r.height, 0), 1),
+  };
+}
+let mcDraw = null;
+mcOverlay.addEventListener('pointerdown', e => {
+  if (e.target !== mcOverlay) return; // let box × buttons handle their own clicks
+  e.preventDefault();
+  mcOverlay.setPointerCapture(e.pointerId);
+  const p = mcFrac(e);
+  mcDraw = { sx: p.fx, sy: p.fy, el: document.createElement('div') };
+  mcDraw.el.className = 'mc-box drawing';
+  mcOverlay.appendChild(mcDraw.el);
+});
+mcOverlay.addEventListener('pointermove', e => {
+  if (!mcDraw) return;
+  const p = mcFrac(e);
+  const l = Math.min(mcDraw.sx, p.fx), t = Math.min(mcDraw.sy, p.fy);
+  Object.assign(mcDraw.el.style, {
+    left: l * 100 + '%', top: t * 100 + '%',
+    width: Math.abs(p.fx - mcDraw.sx) * 100 + '%', height: Math.abs(p.fy - mcDraw.sy) * 100 + '%',
+  });
+});
+mcOverlay.addEventListener('pointerup', e => {
+  if (!mcDraw) return;
+  const p = mcFrac(e);
+  mcDraw.el.remove();
+  const nw = mcImg.naturalWidth, nh = mcImg.naturalHeight;
+  const x = Math.round(Math.min(mcDraw.sx, p.fx) * nw);
+  const y = Math.round(Math.min(mcDraw.sy, p.fy) * nh);
+  const w = Math.round(Math.abs(p.fx - mcDraw.sx) * nw);
+  const h = Math.round(Math.abs(p.fy - mcDraw.sy) * nh);
+  mcDraw = null;
+  if (w >= 4 && h >= 4) { mcBoxes.push({ x, y, w, h, label: '' }); mcRenderBoxes(); mcRenderList(); mcRefresh(); }
+});
+
+function mcPayload() {
+  return mcBoxes.map((b, i) => ({
+    x: b.x, y: b.y, width: b.w, height: b.h,
+    label: (b.label && b.label.trim()) || ('crop-' + (i + 1)),
+  }));
+}
+function mcCropCard(name, b64, errMsg) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  if (errMsg) {
+    el.innerHTML = `<div class="meta"><div class="name">${name}</div><div class="err">${errMsg}</div></div>`;
+    return el;
+  }
+  const src = `data:image/png;base64,${b64}`;
+  const kb = (b64.length * 0.75 / 1024).toFixed(1);
+  el.innerHTML = `
+    <div class="preview clickable" title="Click to inspect"><img src="${src}" alt="${name}"/></div>
+    <div class="meta">
+      <div class="name">${name}</div>
+      <div class="foot"><span class="size">${kb} KB</span>
+        <a class="dl" download="${name}.png" href="${src}"><button class="dl">Download</button></a></div>
+    </div>`;
+  el.querySelector('.preview').addEventListener('click', () => openRasterModal(name, src, kb));
+  return el;
+}
+
+function mcPlaceholderCard(name) {
+  const el = document.createElement('div');
+  el.className = 'card pending';
+  el.innerHTML = `
+    <div class="preview"><div class="spinner"></div></div>
+    <div class="meta">
+      <div class="name">${name}</div>
+      <div class="foot"><span class="size">cropping…</span></div>
+    </div>`;
+  return el;
+}
+
+async function mcGenerate() {
+  const payload = mcPayload();
+  const qs = `boxes=${encodeURIComponent(JSON.stringify(payload))}`;
+  const n = payload.length;
+  const grid = makeSection('#mc-results', '#mc-clearOut', mcFile, `${n} crop${n > 1 ? 's' : ''}`);
+  payload.forEach(b => grid.appendChild(mcPlaceholderCard(b.label)));
+  setLoading($('#mc-go'), true, 'Cropping…');
+  $('#mc-status').innerHTML = '<span class="spinner sm"></span>Cropping…';
+  try {
+    const r = await fetch(`/crop?${qs}`, { method: 'POST', body: mcFile });
+    if (!r.ok) { grid.innerHTML = ''; $('#mc-status').textContent = 'Error: ' + (await r.text()); }
+    else {
+      const data = await r.json();
+      grid.innerHTML = '';
+      payload.forEach(b => {
+        if (data.results[b.label]) grid.appendChild(mcCropCard(b.label, data.results[b.label].png, null));
+        else grid.appendChild(mcCropCard(b.label, null, data.errors[b.label] || 'failed'));
+      });
+      $('#mc-status').textContent = 'Done.';
+    }
+  } catch (e) {
+    $('#mc-status').textContent = 'Error: ' + e;
+  }
+  setLoading($('#mc-go'), false);
+  mcRefresh();
+}
+
+async function mcDownloadZip() {
+  const qs = `zip=1&boxes=${encodeURIComponent(JSON.stringify(mcPayload()))}`;
+  setLoading($('#mc-zip'), true, 'Zipping…');
+  $('#mc-status').innerHTML = '<span class="spinner sm"></span>Building zip…';
+  try {
+    const r = await fetch(`/crop?${qs}`, { method: 'POST', body: mcFile });
+    const blob = await r.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'pathsmith-crops.zip';
+    a.click();
+    $('#mc-status').textContent = 'Done.';
+  } catch (e) {
+    $('#mc-status').textContent = 'Error: ' + e;
+  }
+  setLoading($('#mc-zip'), false);
+  mcRefresh();
+}
+
+$('#mc-go').addEventListener('click', mcGenerate);
+$('#mc-zip').addEventListener('click', mcDownloadZip);
+$('#mc-clearOut').addEventListener('click', () => { $('#mc-results').innerHTML = ''; updateClearBtnFor('#mc-results', '#mc-clearOut'); $('#mc-status').textContent = ''; });
+window.addEventListener('resize', mcRenderBoxes);
+</script>
+</body>
+</html>

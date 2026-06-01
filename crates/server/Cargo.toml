@@ -1,0 +1,33 @@
+# Copyright (C) 2026 Avarnic
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial licensing: COMMERCIAL-LICENSE.md — creo@avarnic.com
+
+[package]
+name = "pathsmith-server"
+description = "Self-hostable HTTP server + optional web UI for PathSmith"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "pathsmith-server"
+path = "src/main.rs"
+
+[dependencies]
+pathsmith-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+image = { workspace = true }
+anyhow = { workspace = true }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal"] }
+axum = "0.7"
+tower = { version = "0.5", features = ["limit"] }
+tower-http = { version = "0.6", features = ["cors", "limit", "timeout"] }
+rust-embed = "8"
+mime_guess = "2"
+rayon = "1"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+clap = { version = "4", features = ["derive", "env"] }
+base64 = "0.22"

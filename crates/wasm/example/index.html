@@ -1,0 +1,71 @@
+<!doctype html>
+<!--
+ Copyright (C) 2026 Avarnic
+ SPDX-License-Identifier: AGPL-3.0-or-later
+ Commercial licensing: COMMERCIAL-LICENSE.md — creo@avarnic.com
+
+ Minimal demo of the PathSmith WASM package running fully client-side.
+ Build the package first:  wasm-pack build crates/wasm --target web
+ Then serve this directory over HTTP (wasm needs http, not file://):
+     python -m http.server   # from crates/wasm/example, after copying ../pkg next to it
+ Or serve crates/wasm and open /example/.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>PathSmith WASM demo</title>
+  <style>
+    body { font: 15px system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; }
+    .preview { background: #fff; border: 1px solid #ccc; padding: 12px; margin-top: 16px; }
+    .preview img { max-width: 100%; }
+    select, button { padding: 6px 10px; font-size: 14px; }
+    #out { color: #555; }
+  </style>
+</head>
+<body>
+  <h1>PathSmith — WASM (client-side)</h1>
+  <p>Everything runs in your browser. No upload.</p>
+  <input type="file" id="file" accept="image/*" />
+  <select id="preset"></select>
+  <button id="go" disabled>Convert</button>
+  <div id="out"></div>
+  <div class="preview" id="preview"></div>
+
+  <script type="module">
+    import init, { convert, presets } from "../pkg/pathsmith_wasm.js";
+
+    let ready = false;
+    await init();
+    ready = true;
+
+    const sel = document.getElementById("preset");
+    JSON.parse(presets()).forEach(p => {
+      const o = document.createElement("option");
+      o.value = p.name; o.textContent = p.name; o.title = p.description;
+      if (p.name === "hybrid") o.selected = true;
+      sel.appendChild(o);
+    });
+
+    const fileEl = document.getElementById("file");
+    const go = document.getElementById("go");
+    fileEl.addEventListener("change", () => { go.disabled = !fileEl.files[0]; });
+
+    // Exposed for automated tests: convert bytes with a preset, return svg length.
+    window.__pathsmith_test = async (bytes, preset) => convert(new Uint8Array(bytes), preset).length;
+
+    go.addEventListener("click", async () => {
+      const buf = new Uint8Array(await fileEl.files[0].arrayBuffer());
+      const t0 = performance.now();
+      try {
+        const svg = convert(buf, sel.value);
+        const ms = (performance.now() - t0).toFixed(0);
+        document.getElementById("out").textContent =
+          `${sel.value}: ${svg.length} bytes in ${ms} ms`;
+        document.getElementById("preview").innerHTML = svg;
+      } catch (e) {
+        document.getElementById("out").textContent = "Error: " + e;
+      }
+    });
+  </script>
+</body>
+</html>

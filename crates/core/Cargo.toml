@@ -1,0 +1,24 @@
+# Copyright (C) 2026 Avarnic
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial licensing: COMMERCIAL-LICENSE.md — creo@avarnic.com
+
+[package]
+name = "pathsmith-core"
+description = "PathSmith core: raster-to-SVG conversion pipelines + multicrop"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+image = { workspace = true }
+serde = { workspace = true }
+vtracer = "0.6"
+visioncortex = "0.8"
+# default-features off drops the `rayon` dep so core also builds for wasm32.
+imageproc = { version = "0.25", default-features = false }
+kmeans_colors = "0.6"
+palette = "0.7"
+quick-xml = "0.36"
+base64 = "0.22"

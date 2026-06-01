@@ -1,0 +1,12 @@
+target
+legacy
+input
+output
+icons
+*.png
+*.svg
+*.zip
+.git
+.claude
+node_modules
+crates/wasm/pkg
