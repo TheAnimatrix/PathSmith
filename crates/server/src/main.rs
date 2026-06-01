@@ -247,6 +247,8 @@ async fn github_stars() -> Response {
 async fn static_handler(uri: Uri) -> Response {
     let path = uri.path().trim_start_matches('/');
     let path = if path.is_empty() { "index.html" } else { path };
+    // Don't SPA-fallback missing static assets (e.g. /logo.png) — browsers need real 404s.
+    let is_asset = path.contains('.') && !path.ends_with(".html");
     if let Some(content) = Assets::get(path) {
         let mime = mime_guess::from_path(path).first_or_octet_stream();
         let body = if path == "index.html" {
@@ -256,7 +258,10 @@ async fn static_handler(uri: Uri) -> Response {
         };
         return resp(StatusCode::OK, mime.as_ref(), body);
     }
-    // SPA fallback.
+    if is_asset {
+        return resp(StatusCode::NOT_FOUND, "text/plain", b"not found".to_vec());
+    }
+    // SPA fallback for client-side routes (/about, /license, …).
     match Assets::get("index.html") {
         Some(c) => resp(StatusCode::OK, "text/html", inject_version(&c.data)),
         None => resp(StatusCode::NOT_FOUND, "text/plain", b"not found".to_vec()),

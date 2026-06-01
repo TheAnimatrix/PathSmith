@@ -1,10 +1,7 @@
 # Pipeline I/O (local / generated)
 /input/
 /output/
-
-# Raster images (sources, crops, re-rasterized previews)
-*.png
-
+/icons/
 # Rust build artifacts
 /target/
 # wasm-pack output (generated npm package)

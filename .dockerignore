@@ -4,7 +4,11 @@ input
 output
 icons
 *.png
+!assets/logo.png
+!crates/server/frontend/logo.png
 *.svg
+!assets/logo.svg
+!crates/server/frontend/logo.svg
 *.zip
 .git
 .claude
