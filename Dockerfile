@@ -1,9 +1,26 @@
-# --- build stage -------------------------------------------------------------
-FROM rust:1-bookworm AS builder
+# --- chef base ---------------------------------------------------------------
+# cargo-chef lets us cache the (expensive) dependency compile in its own layer,
+# keyed only on Cargo.toml/Cargo.lock. Source-only changes then skip straight to
+# recompiling our three workspace crates instead of the whole dependency tree.
+FROM rust:1-bookworm AS chef
+RUN cargo install cargo-chef --locked
 WORKDIR /app
+
+# --- planner -----------------------------------------------------------------
+# Produce a recipe.json describing the dependency graph. This stage's cache busts
+# on any source change, but it's cheap (no compilation happens here).
+FROM chef AS planner
 COPY . .
-# Build only the server (pulls in pathsmith-core). The web UI is embedded into the
-# binary at compile time via rust-embed, so the runtime image needs nothing else.
+RUN cargo chef prepare --recipe-path recipe.json
+
+# --- builder -----------------------------------------------------------------
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+# Compile dependencies only. This layer is reused as long as recipe.json is
+# unchanged — i.e. for every build that doesn't touch Cargo.toml/Cargo.lock.
+RUN cargo chef cook --release -p pathsmith-server --recipe-path recipe.json
+# Now bring in the real sources and build just our crates against the cached deps.
+COPY . .
 RUN cargo build --release -p pathsmith-server
 
 # --- runtime stage -----------------------------------------------------------
