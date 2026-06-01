@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/logo.svg" alt="PathSmith logo" width="120" />
+<img src="assets/logo-readme.svg" alt="PathSmith logo" width="120" />
 
 # PathSmith
 

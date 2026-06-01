@@ -8,6 +8,7 @@ icons
 !crates/server/frontend/logo.png
 *.svg
 !assets/logo.svg
+!assets/logo-readme.svg
 !crates/server/frontend/logo.svg
 *.zip
 .git
